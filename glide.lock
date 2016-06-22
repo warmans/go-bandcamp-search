@@ -1,0 +1,17 @@
+hash: d14627a253563c763ee83c34b17a2fed3d47a76a303c113f853c91ee96b29eb9
+updated: 2016-06-22T19:55:31.443814881+02:00
+imports:
+- name: github.com/andybalholm/cascadia
+  version: 3ad29d1ad1c4f2023e355603324348cf1f4b2d48
+- name: github.com/PuerkitoBio/goquery
+  version: 77cbaef46a3af185a3afb87f88a366f3dee2a904
+- name: github.com/texttheater/golang-levenshtein
+  version: 1298e830a5c134c6830b6d472b7b81faa9492c0a
+  subpackages:
+  - levenshtein
+- name: golang.org/x/net
+  version: bc3663df0ac92f928d419e31e0d2af22e683a5a2
+  subpackages:
+  - html
+  - html/atom
+devImports: []
