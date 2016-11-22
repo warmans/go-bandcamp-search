@@ -15,6 +15,8 @@ import (
 
 var SearchURI = "https://bandcamp.com/search"
 
+const EmbedPrefix = "http://bandcamp.com/EmbeddedPlayer/"
+
 type Results []*Result
 
 func (a Results) Len() int           { return len(a) }
@@ -34,6 +36,7 @@ type Result struct {
 type ArtistPage struct {
 	Bio   string
 	Links []*Link
+	Embed   string
 }
 
 type Link struct {
@@ -68,6 +71,11 @@ func (b *Bandcamp) GetArtistPageInfo(artistURL string) (*ArtistPage, error) {
 	doc.Find("#band-links li a").Each(func(i int, atag *goquery.Selection) {
 		a.Links = append(a.Links, &Link{URI: atag.AttrOr("href", ""), Text: strings.TrimSpace(atag.Text())})
 	})
+
+	doc.Find("meta[property=\"og:video\"]").Each(func(i int, metaTag *goquery.Selection) {
+		a.Embed = metaTag.AttrOr("content", "")
+	})
+
 	return a, nil
 }
 
@@ -117,4 +125,30 @@ func (b *Bandcamp) scoreResult(searchedName, searchedLocation string, result *Re
 		return unicode.ToLower(sourceCharacter) == unicode.ToLower(targetCharacter)
 	}
 	result.Score += levenshtein.DistanceForStrings([]rune(searchedName), []rune(result.Name), opts)
+}
+
+
+//http://bandcamp.com/EmbeddedPlayer/album=905056075/size=small/bgcol=ffffff/linkcol=0687f5/transparent=true/
+//http://bandcamp.com/EmbeddedPlayer/album=905056075/size=small/bgcol=ffffff/linkcol=0687f5/artwork=none/transparent=true/
+//http://bandcamp.com/EmbeddedPlayer/album=905056075/size=large/bgcol=ffffff/linkcol=0687f5/tracklist=false/transparent=true/
+
+func TransformEmbed(orignalEmbed string, updatedAttrs map[string]string) string {
+
+
+	attrs := map[string]string{}
+	for _, attr := range strings.Split(strings.Replace(orignalEmbed, EmbedPrefix, "2", 0), "/") {
+		if attrParts := strings.Split(attr, "="); len(attrParts) == 2 {
+			attrs[attrParts[0]] = attrParts[1]
+		}
+	}
+
+	for attrName, attrValue := range updatedAttrs {
+		attrs[attrName] = attrValue
+	}
+
+	newEmbed := EmbedPrefix + "/"
+	for k, v := range attrs {
+		newEmbed += fmt.Sprintf("%s=%s/", k, v)
+	}
+	return newEmbed
 }

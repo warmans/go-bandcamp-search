@@ -13,6 +13,7 @@ import (
 
 	"bytes"
 	"encoding/json"
+	"strings"
 )
 
 // supply -update flag to update all golden files
@@ -136,5 +137,44 @@ func TestBandcampSearch(t *testing.T) {
 				t.Errorf("Failed to compare result with golden file due to error: %s", err.Error())
 			}
 		}()
+	}
+}
+
+func TestTransformEmbed(t *testing.T) {
+
+	tests := []struct {
+		Original string
+		UpdateAttrs map[string]string
+	}{
+		{
+			//update attr
+			Original: "http://bandcamp.com/EmbeddedPlayer/album=905056075/size=small/bgcol=ffffff/linkcol=0687f5/transparent=true/",
+			UpdateAttrs: map[string]string{"size": "large"},
+		},
+		{
+			//add attr
+			Original: "http://bandcamp.com/EmbeddedPlayer/album=905056075/size=large/bgcol=ffffff/linkcol=0687f5/tracklist=false/transparent=true/",
+			UpdateAttrs: map[string]string{"artwork": "small"},
+		},
+		{
+			//misc
+			Original: "http://bandcamp.com/EmbeddedPlayer/album=905056075/size=large/bgcol=ffffff/linkcol=0687f5/tracklist=false/transparent=true/",
+			UpdateAttrs: map[string]string{"artwork": "small", "bgcol": "000000", "tracklist": "false"},
+		},
+	}
+
+	for _, test := range tests {
+		new := TransformEmbed(test.Original, test.UpdateAttrs)
+		//check for hostname
+		if ! strings.Contains(new, EmbedPrefix) {
+			t.Errorf("Failed to find prefix in embed URL %s", new)
+		}
+		//check for updated attrs
+		for k, v := range test.UpdateAttrs {
+			expectedKV :=  fmt.Sprintf("%s=%s/", k, v)
+			if ! strings.Contains(new,expectedKV) {
+				t.Errorf("Failed to find updated attr %s in embed URL %s", expectedKV, new)
+			}
+		}
 	}
 }
